@@ -61,7 +61,7 @@ async def verify_email(code: int, db=Depends(get_db)):
         raise HTTPException(status_code=400, detail="Invalid or expired token.")
     user = await db.users.find_one({"email": email})
     if user:
-        await db.users.update_one({"email": email}, {"$set": {"is_active": True}})
+        await db.users.update_one({"email": email}, {"$set": {"is_verified": True}})
         return {"message": "Email verfied successfully."}
     else:
         raise HTTPException(status_code=404, detail="User not found.")
