@@ -83,7 +83,7 @@ async def get_current_user(token: str = Depends(oauth2_bearer), db = Depends(get
         raise HTTPException(status_code=401, detail="JWT Error - could not validate user.")
 
 def create_verification_code(grace_period = timedelta(hours=24)) -> Tuple[int, datetime]:
-    random_number = random.randint(100000, 999999)
+    random_number = random.randint(1000000, 9999999)
     expiration_time = datetime.now(UTC) + grace_period
     return random_number, expiration_time
     
