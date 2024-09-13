@@ -37,7 +37,6 @@ router = APIRouter()
 @router.post("/signup")
 async def singup(user: UserCreate, background_tasks: BackgroundTasks, db=Depends(get_db)):
     new_user = User(
-        username = user.username,
         email = user.email,
         password = hash_password(password=user.password)
     )
@@ -48,8 +47,8 @@ async def singup(user: UserCreate, background_tasks: BackgroundTasks, db=Depends
     
     db['users'].insert_one(new_user.model_dump())
 
-    code = create_verification_code()
-    await db["users"].update_one({"email": new_user.email}, {"$set": {"verification_code": code}})
+    code, expiration_time = create_verification_code()
+    await db["users"].update_one({"email": new_user.email}, {"$set": {"verification_code": code, "expiration_time": expiration_time}})
     await send_verification_code(new_user.email, code, background_tasks)
 
     return {"message": "User created successfully. Check your email for verification link."}
