@@ -32,6 +32,7 @@ class Token(BaseModel):
 
 
 class UserCreate(BaseModel):
+    full_name: str
     email: EmailStr
     password: str
 
