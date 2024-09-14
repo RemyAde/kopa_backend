@@ -76,7 +76,7 @@ async def get_current_user(token: str = Depends(oauth2_bearer), db = Depends(get
         # user_id = ObjectId(user_id) if isinstance(user_id, str) else user_id
         
         user = await db.users.find_one({"_id": ObjectId(user_id)})
-        if user:
+        if user and user["is_verified"]:
             return single_user_serializer(user)
     
     except JWTError as e:
