@@ -13,6 +13,6 @@ def single_user_serializer(user) -> dict:
 
 
 class UserRegistrationForm(BaseModel):
-    username: Optional[str]
-    gender: Optional[str]
-    bio: Optional[str]
+    username: Optional[str] = None
+    gender: Optional[str] = None
+    state_code: Optional[str] = None

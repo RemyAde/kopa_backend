@@ -66,8 +66,8 @@ async def get_current_user(token: str = Depends(oauth2_bearer), db = Depends(get
         email: str = payload.get("email")
         user_id: str = payload.get("id")
 
-        print(f"Decoded Payload: {payload}")
-        print(f"Email: {email}, User ID: {user_id}")
+        # print(f"Decoded Payload: {payload}")
+        # print(f"Email: {email}, User ID: {user_id}")
 
         if email is None or user_id is None:
             print("invalid user")

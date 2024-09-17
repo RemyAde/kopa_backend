@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
+from starlette import status
 from fastapi.security import OAuth2PasswordRequestForm
 from typing import Annotated
 from datetime import datetime, timedelta, timezone
@@ -25,7 +26,7 @@ class OAuth2PasswordRequestFormEmail(OAuth2PasswordRequestForm):
         super().__init__(username=email, password=password, scope=scope, client_id=client_id, client_secret=client_secret)
 
 
-@router.post("/signup")
+@router.post("/signup", status_code=status.HTTP_201_CREATED)
 async def singup(user: UserCreate, background_tasks: BackgroundTasks, db=Depends(get_db)):
     new_user = User(
         full_name=user.full_name,
@@ -45,8 +46,7 @@ async def singup(user: UserCreate, background_tasks: BackgroundTasks, db=Depends
 
     user_data = single_user_serializer(await db.users.find_one({"email": new_user.email}))
 
-    return {"message": "User created successfully. Check your email for verification link.",
-            "data": user_data}
+    return {"message": "User created successfully. Check your email for verification link."}
 
 
 @router.post("/resend-verification")
@@ -108,12 +108,3 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestFormEmail = Dep
     token_expires = timedelta(minutes=60)
     token = create_access_token(user['email'], str(user["_id"]), expires_delta=token_expires)
     return {"access_token": token, "token_type": "bearer"}
-
-
-@router.get("/me")
-async def read_user_details(user = Depends(get_current_user)):
-    if user is None:
-        print("user dependency returned None")
-        raise HTTPException(status_code=401, detail="Authentication failed")
-    
-    return user

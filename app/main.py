@@ -4,7 +4,7 @@ from .routers import auth, users
 
 app = FastAPI()
 app.include_router(auth.router, prefix="/auth")
-app.include_router(users.router, prefix="/users")
+app.include_router(users.router, prefix="/user")
 
 # Middleware
 app.add_middleware(

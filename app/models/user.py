@@ -11,6 +11,7 @@ class User(BaseModel):
     email: EmailStr
     gender: Optional[str] = None
     password: str
+    state_code: Optional[str] = None
     bio: Optional[str] = None
     verification_code: Optional[int] = None
     verification_sent_at: Optional[datetime] = None

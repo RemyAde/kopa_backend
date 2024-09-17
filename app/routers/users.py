@@ -27,3 +27,10 @@ async def update_user_info(user_form: UserRegistrationForm, user = Depends(get_c
     return {"message": "User updated successfully"}
 
 
+@router.get("/me", status_code=status.HTTP_200_OK)
+async def read_user_details(user = Depends(get_current_user)):
+    if user is None:
+        print("user dependency returned None")
+        raise HTTPException(status_code=401, detail="Authentication failed")
+    
+    return {"data": user}
