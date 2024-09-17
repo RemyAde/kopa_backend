@@ -7,7 +7,8 @@ def single_user_serializer(user) -> dict:
         "id": str(user["_id"]),
         "username": user["username"],
         "email": user["email"],
-        # "verification_code": user["verification_code"],
+        "state_code": user["state_code"],
+        "bio": user["bio"],
         "is_verified": user["is_verified"]
     }
 
