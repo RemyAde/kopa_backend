@@ -46,7 +46,7 @@ async def singup(user: UserCreate, background_tasks: BackgroundTasks, db=Depends
 
     user_data = single_user_serializer(await db.users.find_one({"email": new_user.email}))
 
-    return {"message": "User created successfully. Check your email for verification link."}
+    return {"message": "User created successfully. Check your email for your verification code."}
 
 
 @router.post("/resend-verification")

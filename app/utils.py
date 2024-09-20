@@ -116,3 +116,10 @@ async def send_verification_code(email: str, code: str, background_tasks: Backgr
 
 async def send_email_async(message):
     await send(message, hostname=smtp_host, port=smtp_port, username=smtp_user, password=smtp_pwd, use_tls=True)
+
+
+async def fetch_user_details(user_id: str, db):
+    user = await db.users.find_one({"_id": ObjectId(user_id)})
+    if user:
+        return {"full_name": user["full_name"], "state_code": user.get("state_code", "Unknown")}
+    return {"full_name": "Unknown", "state_code": "Unknown"}
