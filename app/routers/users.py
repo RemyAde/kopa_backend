@@ -18,10 +18,11 @@ async def update_user_info(user_form: UserRegistrationForm, user = Depends(get_c
     if not update_data:
         raise HTTPException(status_code=400, detail="No data provided to update")
     
-    existing_state_code = db.users.find_one({"state_code": update_data["state_code"]})
-    if existing_state_code:
-        raise HTTPException(status_code=400, detail="User with state code already exists.")
-    
+    if update_data.get("state_code") is not None:
+        existing_state_code = await db.users.find_one({"state_code": update_data["state_code"]})
+        if existing_state_code:
+            raise HTTPException(status_code=400, detail="User with this state code already exists.")
+
     user_id = ObjectId(user_id)
 
     result = await db.users.update_one({"_id": user_id}, {"$set": update_data})
