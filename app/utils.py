@@ -12,7 +12,6 @@ from .db import get_db
 from .schemas import single_user_serializer, UserRegistrationForm, BlogPostCreation
 from .config import settings
 from fastapi.security import OAuth2PasswordBearer
-from PIL import Image
 import secrets
 import os
 
