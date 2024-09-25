@@ -176,7 +176,7 @@ async def create_media_file(type: str, file: UploadFile):
 async def user_registration_form(
         username: str = Form(...),
         gender: str = Form(...),
-        state_code: str = Form(...),
+        state_code: str = Form(..., regex=r'^[A-Z]{2}/(2[4-9]|[3-9][0-9])[ABC]/\d{4}$'),
         profile_image: UploadFile = File(None)
 ):
     try:
