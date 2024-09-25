@@ -139,9 +139,14 @@ def create_upload_directory(type: str):
         os.makedirs(BLOG_UPLOAD_DIR, exist_ok=True)
 
 
-def validate_file_extension(filename: str):
+def validate_file_extension(type: str, filename: str):
+    image_extension_list = ["png", "jpg", "jpeg", "webp"]
+    if type == "users":
+        extension_list = image_extension_list
+    elif type == "blogs":
+        extension_list = image_extension_list + ["gif" "mp4", "mkv", "webm", "mpg", "mpeg"]
     extension = os.path.splitext(filename)[-1].lower().replace(".", "")
-    if extension not in ["png", "jpg", "jpeg", "webp", "gif" "mp4", "mkv", "webm", "mpg", "mpeg"]:
+    if extension not in extension_list:
         raise HTTPException(status_code=400, detail="Invalid file format")
     return extension
 
@@ -157,12 +162,12 @@ async def save_file(file: UploadFile, type: str, filename: str):
     return file_path
 
 
-async def create_media_file(file: UploadFile):
+async def create_media_file(type: str, file: UploadFile):
     filename = file.filename
-    validate_file_extension(filename)
-    create_upload_directory(type="blogs")
+    validate_file_extension(type=type, filename=filename)
+    create_upload_directory(type=type)
     extension = os.path.splitext(filename)[-1].lower().replace(".", "")
     token_name = secrets.token_hex(10) + "." + extension
-    file_path = await save_file(file=file, type="blogs", filename=token_name)
+    file_path = await save_file(file=file, type=type, filename=token_name)
 
     return token_name, file_path

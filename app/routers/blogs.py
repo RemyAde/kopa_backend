@@ -56,7 +56,7 @@ async def create_blog_post(
 
     try:
         if image:
-            media_token_name, file_path = await create_media_file(image)
+            media_token_name, file_path = await create_media_file(type="blogs", file=image)
 
         blog = Blog(
             title=title,
@@ -319,7 +319,7 @@ async def edit_media_file(post_id: str, file: UploadFile = File(...),
         raise HTTPException(status_code=401, detail="You are not authorized to make changes to this post")
 
     filename = file.filename
-    validate_file_extension(filename)
+    validate_file_extension(type="blogs", filename=filename)
     create_upload_directory(type="blogs")
     extension = os.path.splitext(filename)[-1].lower().replace(".", "")
     token_name = secrets.token_hex(10) +"."+ extension
