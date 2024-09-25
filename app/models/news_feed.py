@@ -8,6 +8,7 @@ UTC = timezone.utc
 class Blog(BaseModel):
     title: str
     content: str
+    media: Optional[str] = None
     author: str
     likes: int = 0
     liked_by: Optional[List[str]] = None

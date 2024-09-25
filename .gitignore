@@ -60,3 +60,7 @@ cython_debug
 # Ignore database files
 *.db
 migrations/
+
+# Local files
+app/static/uploads/blogs/*
+app/static/uploads/users/*

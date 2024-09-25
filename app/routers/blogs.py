@@ -1,13 +1,16 @@
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, status, HTTPException
+from fastapi import APIRouter, Depends, status, HTTPException, UploadFile, File, Form
 from bson import ObjectId
 from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
 from app.db import get_db
 from app.models.news_feed import Blog
 from app.models.comment import Comment, CommentCreate
 from app.schemas import BlogPostCreation, BlogPostUpdate, single_blog_serializer
-from app.utils import get_current_user, fetch_user_details
-
+from app.utils import (get_current_user, fetch_user_details, create_upload_directory, 
+                       validate_file_extension, save_file, create_media_file)
+import os
+import secrets
 
 UTC = timezone.utc
 
@@ -41,14 +44,59 @@ async def show_newsfeed(page: int = 1, page_size: int = 10, db = Depends(get_db)
 
 
 @router.post("/post/create")
-async def create_blog_post(blog_data: BlogPostCreation, db=Depends(get_db), current_user = Depends(get_current_user)):
-    blog = Blog(
-        title=blog_data.title,
-        content=blog_data.content,
-        author=current_user.get("id")
-    )
-    await db.blogs.insert_one(blog.model_dump())
-    return {"message": "Blog posted successfully!"}
+async def create_blog_post(
+    title: str = Form(...),
+    content: str = Form(...),
+    image: UploadFile = File(None),
+    db=Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    media_token_name = None
+    file_path = None
+
+    try:
+        if image:
+            media_token_name, file_path = await create_media_file(image)
+
+        blog = Blog(
+            title=title,
+            content=content,
+            author=current_user.get("id"),
+            media=media_token_name
+        )
+
+        await db.blogs.insert_one(blog.model_dump())
+
+        return {"message": "Blog posted successfully!", "media_url": file_path}
+    
+    except Exception as e:
+        return {"error": f"An error occurred: {str(e)}"}
+
+
+# THIS IS FASTER!!!
+# @router.post("/post/create")
+# async def create_blog_post(
+#     title: str = Form(...),
+#     content: str = Form(...),
+#     image: UploadFile = File(None),
+#     db=Depends(get_db),
+#     current_user=Depends(get_current_user)
+# ):
+#     blog = Blog(
+#         title=title,
+#         content=content,
+#         author=current_user.get("id")
+#     )
+    
+#     # Insert the blog into the database
+#     result = await db.blogs.insert_one(blog.model_dump())
+    
+#     # Handle image file upload if provided
+#     if image:
+#         token_name, file_path = await create_media_file(image)
+#         await db.blogs.update_one({"_id": result.inserted_id}, {"$set": {"media": token_name}})
+
+#         return {"message": "Blog posted successfully!", "media_url": file_path}
 
 
 @router.get("/post/{post_id}")
@@ -257,3 +305,27 @@ async def list_post_comments(post_id: str, db = Depends(get_db), current_user = 
     
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+    
+
+@router.put("/post/{post_id}/upload-file")
+async def edit_media_file(post_id: str, file: UploadFile = File(...),
+                            db = Depends(get_db), current_user = Depends(get_current_user)):
+    blog = await db.blogs.find_one({"_id": ObjectId(post_id)})
+    if not blog:
+        raise HTTPException(status_code=404, detail="Blog post not found")
+    
+    # Check if the author is the current user
+    if blog["author"] != current_user.get("id"):
+        raise HTTPException(status_code=401, detail="You are not authorized to make changes to this post")
+
+    filename = file.filename
+    validate_file_extension(filename)
+    create_upload_directory(type="blogs")
+    extension = os.path.splitext(filename)[-1].lower().replace(".", "")
+    token_name = secrets.token_hex(10) +"."+ extension
+    file_path = await save_file(file=file, type="blogs", filename=token_name)
+    data = await db.blogs.update_one({"_id": ObjectId(post_id)}, {"$set": {"media": token_name}})
+    if data.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Blog post not found")
+    
+    return JSONResponse(content={"message": "Media file uploaded successfully successfully", "file_path": file_path})

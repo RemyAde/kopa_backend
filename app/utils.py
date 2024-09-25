@@ -1,4 +1,4 @@
-from fastapi import Depends, HTTPException, BackgroundTasks
+from fastapi import Depends, HTTPException, BackgroundTasks, UploadFile
 from pydantic import BaseModel, EmailStr
 from typing import Optional, Tuple
 import bcrypt
@@ -12,8 +12,15 @@ from .db import get_db
 from .schemas import single_user_serializer
 from .config import settings
 from fastapi.security import OAuth2PasswordBearer
+from PIL import Image
+import secrets
+import os
 
 UTC = timezone.utc
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+USER_UPLOAD_DIR = os.path.join(BASE_DIR, "static", "uploads", "users")
+BLOG_UPLOAD_DIR = os.path.join(BASE_DIR, "static", "uploads", "blogs")
 
 oauth2_bearer = OAuth2PasswordBearer(tokenUrl='auth/token')
 
@@ -123,3 +130,39 @@ async def fetch_user_details(user_id: str, db):
     if user:
         return {"full_name": user["full_name"], "state_code": user.get("state_code", "Unknown")}
     return {"full_name": "Unknown", "state_code": "Unknown"}
+
+
+def create_upload_directory(type: str):
+    if type == "users":
+        os.makedirs(USER_UPLOAD_DIR, exist_ok=True)
+    elif type == "blogs":
+        os.makedirs(BLOG_UPLOAD_DIR, exist_ok=True)
+
+
+def validate_file_extension(filename: str):
+    extension = os.path.splitext(filename)[-1].lower().replace(".", "")
+    if extension not in ["png", "jpg", "jpeg", "webp", "gif" "mp4", "mkv", "webm", "mpg", "mpeg"]:
+        raise HTTPException(status_code=400, detail="Invalid file format")
+    return extension
+
+
+async def save_file(file: UploadFile, type: str, filename: str):
+    file_content = await file.read()
+    if type == "users":
+        file_path = os.path.join(USER_UPLOAD_DIR, filename)
+    elif type == "blogs":
+        file_path = os.path.join(BLOG_UPLOAD_DIR, filename)
+    with open(file_path, "wb") as document:
+        document.write(file_content)
+    return file_path
+
+
+async def create_media_file(file: UploadFile):
+    filename = file.filename
+    validate_file_extension(filename)
+    create_upload_directory(type="blogs")
+    extension = os.path.splitext(filename)[-1].lower().replace(".", "")
+    token_name = secrets.token_hex(10) + "." + extension
+    file_path = await save_file(file=file, type="blogs", filename=token_name)
+
+    return token_name, file_path
