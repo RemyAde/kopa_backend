@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, File, HTTPException, status, UploadFile
 from bson import ObjectId
 from app.db import get_db
 from app.utils import get_current_user, user_registration_form, create_media_file
@@ -72,3 +72,16 @@ async def update_user_info(
         raise HTTPException(status_code=404, detail="User not found")
     
     return {"message": "User updated successfully", "media_url": file_path}
+
+
+@router.put("/update-profile-image")
+async def update_profile_image(profile_image: UploadFile = File(...), current_user = Depends(get_current_user), db = Depends(get_db)):
+    if not profile_image:
+        raise HTTPException(status_code=400, detail="You must upload an image file")
+    
+    media_token_name, media_url = await create_media_file(type="users", file=profile_image)
+
+    user_id = current_user.get("id")
+    await db.users.update_one({"_id": ObjectId(user_id)}, {"$set": {"profile_image": media_token_name}})
+
+    return {"message": "profile image updated succcessfully", "media_url": media_url}
