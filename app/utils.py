@@ -1,5 +1,5 @@
-from fastapi import Depends, HTTPException, BackgroundTasks, UploadFile
-from pydantic import BaseModel, EmailStr
+from fastapi import Depends, HTTPException, BackgroundTasks, UploadFile, Form, File
+from pydantic import BaseModel, EmailStr, ValidationError
 from typing import Optional, Tuple
 import bcrypt
 from datetime import datetime, timezone, timedelta
@@ -9,7 +9,7 @@ from aiosmtplib import send
 from email.mime.text import MIMEText
 import random
 from .db import get_db
-from .schemas import single_user_serializer
+from .schemas import single_user_serializer, UserRegistrationForm
 from .config import settings
 from fastapi.security import OAuth2PasswordBearer
 from PIL import Image
@@ -171,3 +171,21 @@ async def create_media_file(type: str, file: UploadFile):
     file_path = await save_file(file=file, type=type, filename=token_name)
 
     return token_name, file_path
+
+
+async def user_registration_form(
+        username: str = Form(...),
+        gender: str = Form(...),
+        state_code: str = Form(...),
+        profile_image: UploadFile = File(None)
+):
+    try:
+        return UserRegistrationForm(
+            username=username,
+            gender=gender,
+            state_code=state_code,
+            profile_image=profile_image
+
+        )
+    except ValidationError as e:
+        raise HTTPException(status_code=422, detail=e.errors())

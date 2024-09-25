@@ -1,3 +1,4 @@
+from fastapi import File, Form, UploadFile
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime, timezone
@@ -18,9 +19,10 @@ def single_user_serializer(user) -> dict:
 
 
 class UserRegistrationForm(BaseModel):
-    username: Optional[str] = None
-    gender: Optional[str] = None
-    state_code: Optional[str] = None
+    username: str
+    gender: str
+    state_code: str
+    profile_image: UploadFile = None
 
 
 class BlogPostCreation(BaseModel):
