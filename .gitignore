@@ -64,3 +64,9 @@ migrations/
 # Local files
 app/static/uploads/blogs/*
 app/static/uploads/users/*
+
+!app/static/uploads/blogs/
+!app/static/uploads/users/
+
+!app/static/uploads/users/*.gitkeep
+!app/static/uploads/blogs/*.gitkeep
