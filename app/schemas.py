@@ -22,13 +22,13 @@ class UserRegistrationForm(BaseModel):
     username: str
     gender: str
     state_code: str
-    profile_image: UploadFile = None
+    profile_image: Optional[UploadFile] = None
 
 
 class BlogPostCreation(BaseModel):
     title: str
     content: str
-    media: UploadFile = None
+    media: Optional[UploadFile] = None
 
 
 class BlogPostUpdate(BaseModel):

@@ -188,7 +188,9 @@ async def user_registration_form(
 
         )
     except ValidationError as e:
-        raise HTTPException(status_code=422, detail=e.errors())
+       raise HTTPException(status_code=422, detail=e.errors())
+    except ValueError as e:
+     raise HTTPException(status_code=400, detail=str(e))
     
 
 async def blog_creation_form(
@@ -204,4 +206,6 @@ async def blog_creation_form(
 
         )
     except ValidationError as e:
-        raise HTTPException(status_code=422, detail=e.errors())
+       raise HTTPException(status_code=422, detail=e.errors())
+    except ValueError as e:
+       raise HTTPException(status_code=400, detail=str(e))
