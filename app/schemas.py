@@ -28,6 +28,7 @@ class UserRegistrationForm(BaseModel):
 class BlogPostCreation(BaseModel):
     title: str
     content: str
+    media: UploadFile = None
 
 
 class BlogPostUpdate(BaseModel):

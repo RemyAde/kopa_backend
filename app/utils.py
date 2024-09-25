@@ -9,7 +9,7 @@ from aiosmtplib import send
 from email.mime.text import MIMEText
 import random
 from .db import get_db
-from .schemas import single_user_serializer, UserRegistrationForm
+from .schemas import single_user_serializer, UserRegistrationForm, BlogPostCreation
 from .config import settings
 from fastapi.security import OAuth2PasswordBearer
 from PIL import Image
@@ -185,6 +185,22 @@ async def user_registration_form(
             gender=gender,
             state_code=state_code,
             profile_image=profile_image
+
+        )
+    except ValidationError as e:
+        raise HTTPException(status_code=422, detail=e.errors())
+    
+
+async def blog_creation_form(
+        title: str = Form(...),
+        content: str = Form(...),
+        media: UploadFile = File(None)
+):
+    try:
+        return BlogPostCreation(
+            title=title,
+            content=content,
+            media=media
 
         )
     except ValidationError as e:

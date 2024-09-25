@@ -8,7 +8,8 @@ from app.models.news_feed import Blog
 from app.models.comment import Comment, CommentCreate
 from app.schemas import BlogPostCreation, BlogPostUpdate, single_blog_serializer
 from app.utils import (get_current_user, fetch_user_details, create_upload_directory, 
-                       validate_file_extension, save_file, create_media_file)
+                       validate_file_extension, save_file, create_media_file,
+                       blog_creation_form)
 import os
 import secrets
 
@@ -45,24 +46,24 @@ async def show_newsfeed(page: int = 1, page_size: int = 10, db = Depends(get_db)
 
 @router.post("/post/create")
 async def create_blog_post(
-    title: str = Form(...),
-    content: str = Form(...),
-    image: UploadFile = File(None),
+    blog_form: BlogPostCreation = Depends(blog_creation_form),
     db=Depends(get_db),
     current_user=Depends(get_current_user)
 ):
     media_token_name = None
     file_path = None
 
+    create_data = blog_form.model_dump(exclude_unset=True)
+
     try:
-        if image:
-            media_token_name, file_path = await create_media_file(type="blogs", file=image)
+        if blog_form.media:
+            media_token_name, file_path = await create_media_file(type="blogs", file=blog_form.media)
 
         blog = Blog(
-            title=title,
-            content=content,
-            author=current_user.get("id"),
-            media=media_token_name
+            title = create_data["title"],
+            content = create_data["content"],
+            author = current_user.get("id"),
+            media = media_token_name
         )
 
         await db.blogs.insert_one(blog.model_dump())
@@ -71,32 +72,6 @@ async def create_blog_post(
     
     except Exception as e:
         return {"error": f"An error occurred: {str(e)}"}
-
-
-# THIS IS FASTER!!!
-# @router.post("/post/create")
-# async def create_blog_post(
-#     title: str = Form(...),
-#     content: str = Form(...),
-#     image: UploadFile = File(None),
-#     db=Depends(get_db),
-#     current_user=Depends(get_current_user)
-# ):
-#     blog = Blog(
-#         title=title,
-#         content=content,
-#         author=current_user.get("id")
-#     )
-    
-#     # Insert the blog into the database
-#     result = await db.blogs.insert_one(blog.model_dump())
-    
-#     # Handle image file upload if provided
-#     if image:
-#         token_name, file_path = await create_media_file(image)
-#         await db.blogs.update_one({"_id": result.inserted_id}, {"$set": {"media": token_name}})
-
-#         return {"message": "Blog posted successfully!", "media_url": file_path}
 
 
 @router.get("/post/{post_id}")
