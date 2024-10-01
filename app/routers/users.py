@@ -50,3 +50,12 @@ async def update_profile_image(profile_image: UploadFile = File(...), current_us
     await db.users.update_one({"_id": ObjectId(user_id)}, {"$set": {"profile_image": media_token_name}})
 
     return {"message": "profile image updated succcessfully", "media_url": media_url}
+
+
+@router.get("/me", status_code=status.HTTP_200_OK)
+async def read_user_details(user = Depends(get_current_user)):
+    if user is None:
+        print("user dependency returned None")
+        raise HTTPException(status_code=401, detail="Authentication failed")
+    
+    return {"data": user}

@@ -13,9 +13,12 @@ from app.utils import (get_current_user, fetch_user_details, create_upload_direc
 import os
 import secrets
 
+router = APIRouter()
+
 UTC = timezone.utc
 
-router = APIRouter()
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BLOG_UPLOAD_DIR = os.path.join(BASE_DIR, "static", "uploads", "blogs")
 
 
 @router.get("/feeds")
@@ -31,16 +34,23 @@ async def show_newsfeed(page: int = 1, page_size: int = 10, db = Depends(get_db)
     blogs = await db.blogs.find().sort("created_at", -1).skip(skip).limit(page_size).to_list(length=page_size)
 
     data = []
+    media = ""
+
     for blog in blogs:
         user = await db.users.find_one({"_id": ObjectId(blog["author"])})
+        if blog["media"]:
+            media = os.path.join(BLOG_UPLOAD_DIR, blog["media"])
         data.append({
             # use single_blog serializer to render so id can be included also
             "title": blog["title"],
             "content": blog["content"],
+            "media": media,
             "full_name": user["full_name"],
             "state_code": user["state_code"],
             "created_at": blog["created_at"]
+            # find a way to serialize thsi data
         })
+        
     return {"data": data, "page": page, "page_size": page_size}
 
 
@@ -276,6 +286,7 @@ async def list_post_comments(post_id: str, db = Depends(get_db), current_user = 
             comment["user"] = user_details
 
         return {"post_data": post_data, "comment_data": comment_data}
+        # add a serialization to check for and include media
         
     
     except Exception as e:
