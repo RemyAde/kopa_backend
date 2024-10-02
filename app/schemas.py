@@ -1,19 +1,16 @@
-from fastapi import File, Form, UploadFile
+from fastapi import File, Form, UploadFile, Request
 from pydantic import BaseModel
 from typing import Optional, Union
 from datetime import datetime, timezone
-import os
 
 UTC = timezone.utc
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-USER_UPLOAD_DIR = os.path.join(BASE_DIR, "static", "uploads", "users")
-BLOG_UPLOAD_DIR = os.path.join(BASE_DIR, "static", "uploads", "blogs")
 
-def single_user_serializer(user) -> dict:
+def single_user_serializer(user, request) -> dict:
     profile_image = ""
     if user["profile_image"]:
-        profile_image = os.path.join(USER_UPLOAD_DIR, user["profile_image"])
+        # profile_image = os.path.join(USER_UPLOAD_DIR, user["profile_image"])
+        profile_image = f"{request.base_url}static/uploads/users/{user['profile_image']}"
         
     return {
         "id": str(user["_id"]),
@@ -47,10 +44,10 @@ class BlogPostUpdate(BaseModel):
     updated_at: datetime = datetime.now(UTC)
 
 
-def single_blog_serializer(blog, user):
+def single_blog_serializer(blog, user, request):
     media = ""
     if blog["media"]:
-        media = os.path.join(BLOG_UPLOAD_DIR, blog["media"])
+        media = f"{request.base_url}static/uploads/blogs/{blog['media']}"
 
     return {
         "id": str(blog["_id"]),

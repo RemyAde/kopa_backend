@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, status, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, Depends, status, HTTPException, UploadFile, File, Form, Request
 from bson import ObjectId
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
@@ -10,19 +10,16 @@ from app.schemas import BlogPostCreation, BlogPostUpdate, single_blog_serializer
 from app.utils import (get_current_user, fetch_user_details, create_upload_directory, 
                        validate_file_extension, save_file, create_media_file,
                        blog_creation_form)
-import os
+
 import secrets
 
 router = APIRouter()
 
 UTC = timezone.utc
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-BLOG_UPLOAD_DIR = os.path.join(BASE_DIR, "static", "uploads", "blogs")
-
 
 @router.get("/feeds")
-async def show_newsfeed(page: int = 1, page_size: int = 10, db = Depends(get_db), current_user = Depends(get_current_user)):
+async def show_newsfeed(request: Request, page: int = 1, page_size: int = 10, db = Depends(get_db), current_user = Depends(get_current_user)):
     # Validate page parameter
     if page < 1:
         page = 1
@@ -39,7 +36,7 @@ async def show_newsfeed(page: int = 1, page_size: int = 10, db = Depends(get_db)
     for blog in blogs:
         user = await db.users.find_one({"_id": ObjectId(blog["author"])})
         if blog["media"]:
-            media = os.path.join(BLOG_UPLOAD_DIR, blog["media"])
+            media = f"{request.base_url}static/uploads/blogs/{blog['media']}"
         data.append({
             # use single_blog serializer to render so id can be included also
             "title": blog["title"],
@@ -85,7 +82,7 @@ async def create_blog_post(
 
 
 @router.get("/post/{post_id}")
-async def get_post(post_id:str, db = Depends(get_db), current_user = Depends(get_current_user)):
+async def get_post(request: Request, post_id:str, db = Depends(get_db), current_user = Depends(get_current_user)):
     # retrieve single post
     # use response model
     blog = await db.blogs.find_one({"_id": ObjectId(post_id)})
@@ -97,7 +94,7 @@ async def get_post(post_id:str, db = Depends(get_db), current_user = Depends(get
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    data = single_blog_serializer(blog, user)
+    data = single_blog_serializer(blog, user, request)
     return {"data": data}
 
 

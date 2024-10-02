@@ -1,4 +1,4 @@
-from fastapi import Depends, HTTPException, BackgroundTasks, UploadFile, Form, File
+from fastapi import Depends, HTTPException, BackgroundTasks, Request, UploadFile, Form, File
 from pydantic import BaseModel, EmailStr, ValidationError
 from typing import Optional, Tuple
 import bcrypt
@@ -66,7 +66,7 @@ async def authenticate_user(email: str, password: str, db=Depends(get_db)):
         return False
     return user
 
-async def get_current_user(token: str = Depends(oauth2_bearer), db = Depends(get_db)):
+async def get_current_user(request: Request, token: str = Depends(oauth2_bearer), db = Depends(get_db)):
     try:
         payload = jwt.decode(token, secret_key, algorithms=algorithm)
         email: str = payload.get("email")
@@ -83,7 +83,7 @@ async def get_current_user(token: str = Depends(oauth2_bearer), db = Depends(get
         
         user = await db.users.find_one({"_id": ObjectId(user_id)})
         if user and user["is_verified"]:
-            return single_user_serializer(user)
+            return single_user_serializer(user, request)
     
     except JWTError as e:
         print(f"JWT Error {e}")
