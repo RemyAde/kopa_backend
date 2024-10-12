@@ -83,7 +83,7 @@ async def create_blog_post(
 
 
 @router.get("/post/{post_id}")
-async def get_post(request: Request, post_id:str, db = Depends(get_db), current_user = Depends(get_current_user)):
+async def get_post(post_id:str, db = Depends(get_db), current_user = Depends(get_current_user)):
     # retrieve single post
     # use response model
     blog = await db.blogs.find_one({"_id": ObjectId(post_id)})
@@ -95,7 +95,7 @@ async def get_post(request: Request, post_id:str, db = Depends(get_db), current_
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    data = single_blog_serializer(blog, user, request)
+    data = single_blog_serializer(blog, user)
     return {"data": data}
 
 

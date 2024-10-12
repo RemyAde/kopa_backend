@@ -6,11 +6,8 @@ from datetime import datetime, timezone
 UTC = timezone.utc
 
 
-def single_user_serializer(user, request) -> dict:
-    profile_image = ""
-    if user["profile_image"]:
-        # profile_image = os.path.join(USER_UPLOAD_DIR, user["profile_image"])
-        profile_image = f"{request.base_url}static/uploads/users/{user['profile_image']}"
+def single_user_serializer(user) -> dict:
+    profile_image = user["profile_image"] if user["profile_image"] else ""
         
     return {
         "id": str(user["_id"]),
@@ -44,10 +41,8 @@ class BlogPostUpdate(BaseModel):
     updated_at: datetime = datetime.now(UTC)
 
 
-def single_blog_serializer(blog, user, request):
-    media = ""
-    if blog["media"]:
-        media = f"{request.base_url}static/uploads/blogs/{blog['media']}"
+def single_blog_serializer(blog, user):
+    media = blog["media"] if blog["media"] else ""
 
     return {
         "id": str(blog["_id"]),

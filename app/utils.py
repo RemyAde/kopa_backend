@@ -70,7 +70,7 @@ async def authenticate_user(email: str, password: str, db=Depends(get_db)):
     return user
 
 
-async def get_current_user(request: Request, token: str = Depends(oauth2_bearer), db = Depends(get_db)):
+async def get_current_user(token: str = Depends(oauth2_bearer), db = Depends(get_db)):
     try:
         payload = jwt.decode(token, secret_key, algorithms=algorithm)
         email: str = payload.get("email")
@@ -87,7 +87,7 @@ async def get_current_user(request: Request, token: str = Depends(oauth2_bearer)
         
         user = await db.users.find_one({"_id": ObjectId(user_id)})
         if user and user["is_verified"]:
-            return single_user_serializer(user, request)
+            return single_user_serializer(user)
     
     except JWTError as e:
         print(f"JWT Error {e}")

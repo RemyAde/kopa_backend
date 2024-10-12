@@ -5,8 +5,8 @@ from typing import Annotated
 from datetime import datetime, timedelta, timezone
 from app.models.user import User
 from app.db import get_db
-from app.schemas import single_user_serializer
-from app.utils import (Token, UserCreate, hash_password, authenticate_user, create_access_token,get_current_user, create_verification_code, verify_verification_code, send_verification_code)
+# from app.schemas import single_user_serializer
+from app.utils import (Token, UserCreate, hash_password, authenticate_user, create_access_token, create_verification_code, verify_verification_code, send_verification_code)
 from fastapi import Form
 
 
@@ -44,7 +44,7 @@ async def singup(user: UserCreate, background_tasks: BackgroundTasks, db=Depends
     await db["users"].update_one({"email": new_user.email}, {"$set": {"verification_code": code, "expiration_time": expiration_time, "verification_sent_at": datetime.now(UTC)}})
     await send_verification_code(new_user.email, code, background_tasks)
 
-    user_data = single_user_serializer(await db.users.find_one({"email": new_user.email}))
+    # user_data = single_user_serializer(await db.users.find_one({"email": new_user.email}))
 
     return {"message": "User created successfully. Check your email for your verification code."}
 
