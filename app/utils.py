@@ -48,14 +48,17 @@ def hash_password(password: str) -> str:
     hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
     return hashed_password
 
+
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
+
 
 def create_access_token(email: str, user_id: str, expires_delta: timedelta):
     encode = {"email": email, "id": user_id}
     expires = datetime.now(UTC) + expires_delta
     encode.update({"exp": expires})
     return jwt.encode(encode, secret_key, algorithm)
+
 
 async def authenticate_user(email: str, password: str, db=Depends(get_db)):
     user =  await db.users.find_one({"email": email})
@@ -65,6 +68,7 @@ async def authenticate_user(email: str, password: str, db=Depends(get_db)):
     if not verify_password(plain_password=password, hashed_password=hashed_password):
         return False
     return user
+
 
 async def get_current_user(request: Request, token: str = Depends(oauth2_bearer), db = Depends(get_db)):
     try:
@@ -89,11 +93,13 @@ async def get_current_user(request: Request, token: str = Depends(oauth2_bearer)
         print(f"JWT Error {e}")
         raise HTTPException(status_code=401, detail="JWT Error - could not validate user.")
 
+
 def create_verification_code(grace_period = timedelta(hours=24)) -> Tuple[int, datetime]:
     random_number = random.randint(1000000, 9999999)
     expiration_time = datetime.now(UTC) + grace_period
     return random_number, expiration_time
-    
+
+
 async def verify_verification_code(verification_code: int, db):
     try:
         user = await db.users.find_one({"verification_code": verification_code})
@@ -111,6 +117,7 @@ async def verify_verification_code(verification_code: int, db):
     
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"An error occurred - {e}")
+  
 
 async def send_verification_code(email: str, code: str, background_tasks: BackgroundTasks):
     message = MIMEText(f"Please use the code to verify your email: {code}")
@@ -119,6 +126,7 @@ async def send_verification_code(email: str, code: str, background_tasks: Backgr
     message["Subject"] = "Email Verification"
 
     background_tasks.add_task(send_email_async, message)
+
 
 async def send_email_async(message):
     await send(message, hostname=smtp_host, port=smtp_port, username=smtp_user, password=smtp_pwd, use_tls=True)
@@ -156,9 +164,9 @@ async def save_file(file: UploadFile, type: str, filename: str):
         file_path = os.path.join(USER_UPLOAD_DIR, filename)
     elif type == "blogs":
         file_path = os.path.join(BLOG_UPLOAD_DIR, filename)
+    
     with open(file_path, "wb") as document:
         document.write(file_content)
-    return file_path
 
 
 async def create_media_file(type: str, file: UploadFile):
@@ -167,9 +175,9 @@ async def create_media_file(type: str, file: UploadFile):
     create_upload_directory(type=type)
     extension = os.path.splitext(filename)[-1].lower().replace(".", "")
     token_name = secrets.token_hex(10) + "." + extension
-    file_path = await save_file(file=file, type=type, filename=token_name)
+    await save_file(file=file, type=type, filename=token_name)
 
-    return token_name, file_path
+    return token_name
 
 
 async def user_registration_form(
@@ -204,6 +212,7 @@ async def blog_creation_form(
             media=media
 
         )
+    
     except ValidationError as e:
        raise HTTPException(status_code=422, detail=e.errors())
     except ValueError as e:
