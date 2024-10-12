@@ -28,7 +28,7 @@ async def update_user_info(
     # Optional: Handle image file processing
     if user_form.profile_image:
         image_token_name = await create_media_file(type="users", file=user_form.profile_image)
-        update_data["profile_image"] = f"{request.base_url}static/uploads/blogs/{image_token_name}"
+        update_data["profile_image"] = f"{request.base_url}static/uploads/users/{image_token_name}"
     
     user_id = ObjectId(user_id)
 
@@ -47,7 +47,7 @@ async def update_profile_image(request: Request, profile_image: UploadFile = Fil
     media_token_name = await create_media_file(type="users", file=profile_image)
 
     user_id = current_user.get("id")
-    await db.users.update_one({"_id": ObjectId(user_id)}, {"$set": {"profile_image": f"{request.base_url}static/uploads/blogs/{media_token_name}"}})
+    await db.users.update_one({"_id": ObjectId(user_id)}, {"$set": {"profile_image": f"{request.base_url}static/uploads/users/{media_token_name}"}})
 
     return {"message": "profile image updated succcessfully"}
 
