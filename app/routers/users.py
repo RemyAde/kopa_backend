@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, File, HTTPException, status, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, status, UploadFile, Request
 from bson import ObjectId
 from app.db import get_db
 from app.utils import get_current_user, user_registration_form, create_media_file
@@ -9,7 +9,7 @@ router = APIRouter()
 
 @router.put("/registration")
 async def update_user_info(
-    user_form: UserRegistrationForm = Depends(user_registration_form),  # Inject form data dependency
+    request: Request, user_form: UserRegistrationForm = Depends(user_registration_form),  # Inject form data dependency
     user = Depends(get_current_user),  # Authorization
     db = Depends(get_db),  # Database
 ):
@@ -27,8 +27,8 @@ async def update_user_info(
     
     # Optional: Handle image file processing
     if user_form.profile_image:
-        image_token_name, file_path = await create_media_file(type="users", file=user_form.profile_image)
-        update_data["profile_image"] = image_token_name
+        image_token_name = await create_media_file(type="users", file=user_form.profile_image)
+        update_data["profile_image"] = f"{request.base_url}static/uploads/blogs/{image_token_name}"
     
     user_id = ObjectId(user_id)
 
@@ -36,20 +36,20 @@ async def update_user_info(
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="User not found")
     
-    return {"message": "User updated successfully", "media_url": file_path}
+    return {"message": "User updated successfully"}
 
 
 @router.put("/update-profile-image")
-async def update_profile_image(profile_image: UploadFile = File(...), current_user = Depends(get_current_user), db = Depends(get_db)):
+async def update_profile_image(request: Request, profile_image: UploadFile = File(...), current_user = Depends(get_current_user), db = Depends(get_db)):
     if not profile_image:
         raise HTTPException(status_code=400, detail="You must upload an image file")
     
-    media_token_name, media_url = await create_media_file(type="users", file=profile_image)
+    media_token_name = await create_media_file(type="users", file=profile_image)
 
     user_id = current_user.get("id")
-    await db.users.update_one({"_id": ObjectId(user_id)}, {"$set": {"profile_image": media_token_name}})
+    await db.users.update_one({"_id": ObjectId(user_id)}, {"$set": {"profile_image": f"{request.base_url}static/uploads/blogs/{media_token_name}"}})
 
-    return {"message": "profile image updated succcessfully", "media_url": media_url}
+    return {"message": "profile image updated succcessfully"}
 
 
 @router.get("/me", status_code=status.HTTP_200_OK)
