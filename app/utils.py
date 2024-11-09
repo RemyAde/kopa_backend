@@ -76,9 +76,6 @@ async def get_current_user(token: str = Depends(oauth2_bearer), db = Depends(get
         email: str = payload.get("email")
         user_id: str = payload.get("id")
 
-        # print(f"Decoded Payload: {payload}")
-        # print(f"Email: {email}, User ID: {user_id}")
-
         if email is None or user_id is None:
             print("invalid user")
             raise HTTPException(status_code=401, detail="Could not validate user.")
@@ -92,7 +89,7 @@ async def get_current_user(token: str = Depends(oauth2_bearer), db = Depends(get
     except JWTError as e:
         print(f"JWT Error {e}")
         raise HTTPException(status_code=401, detail="JWT Error - could not validate user.")
-
+    
 
 def create_verification_code(grace_period = timedelta(hours=24)) -> Tuple[int, datetime]:
     random_number = random.randint(1000000, 9999999)
@@ -217,3 +214,28 @@ async def blog_creation_form(
        raise HTTPException(status_code=422, detail=e.errors())
     except ValueError as e:
        raise HTTPException(status_code=400, detail=str(e))
+    
+
+async def get_current_user_from_token(token: str, db):
+    print("recieved token: ", token)
+    try:
+        payload = jwt.decode(token, secret_key, algorithms=algorithm)
+        email: str = payload.get("email")
+        user_id: str = payload.get("id")
+
+        if email is None or user_id is None:
+            print("invalid user")
+            raise HTTPException(status_code=401, detail="Could not validate user.")
+        
+        # user_id = ObjectId(user_id) if isinstance(user_id, str) else user_id
+        
+        user = await db.users.find_one({"_id": ObjectId(user_id)})
+        if user and user["is_verified"]:
+            active_user =  single_user_serializer(user)
+            print("active user: ", active_user["username"])
+            
+            return {"username": active_user["username"]}
+    
+    except JWTError as e:
+        print(f"JWT Error {e}")
+        raise HTTPException(status_code=401, detail="JWT Error - could not validate user.")

@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
-from .routers import auth, users, blogs
+from .routers import auth, users, blogs, chat
 from fastapi.staticfiles import StaticFiles
 import os 
 
@@ -11,6 +11,7 @@ app = FastAPI()
 app.include_router(auth.router, prefix="/auth", tags=["auth"])
 app.include_router(users.router, prefix="/user", tags=["users"])
 app.include_router(blogs.router, prefix="/newsfeed", tags=["newsfeed"])
+app.include_router(chat.router, tags=["chatrooms"])
 
 
 # Static files
