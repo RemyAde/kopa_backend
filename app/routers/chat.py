@@ -33,6 +33,20 @@ async def list_chatrooms(db=Depends(get_db), current_user=Depends(get_current_us
     return response
 
 
+@router.get("/my-chatrooms", response_model=List[dict])
+async def list_user_chatrooms(db=Depends(get_db), current_user=Depends(get_current_user)):
+    # Fetch chatrooms where the current user is a member
+    chatrooms = await db['chatrooms'].find({"members": current_user["username"]}).to_list(length=100)
+
+    if not chatrooms:
+        raise HTTPException(status_code=404, detail="No chatrooms found for the current user.")
+
+    # Format the response to include necessary details
+    chatroom_list = [{"id": str(chatroom["_id"]), "name": chatroom["name"], "members": chatroom["members"]} for chatroom in chatrooms]
+
+    return {"chatrooms": chatroom_list}
+
+
 @router.post("/create")
 async def create_chatroom(chatroom: ChatRoomCreate, db=Depends(get_db), current_user=Depends(get_current_user)):
     existing_room = await db['chatrooms'].find_one({"name": chatroom.name})
