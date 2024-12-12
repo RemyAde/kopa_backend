@@ -13,8 +13,28 @@ class ChatRoomCreate(BaseModel):
     name: str
     members: List[str] = []
 
-@router.post("/chatrooms")
-async def create_chatroom(chatroom: ChatRoomCreate, db=Depends(get_db)):
+
+@router.get("/", response_model=List[dict])
+async def list_chatrooms(db=Depends(get_db), current_user=Depends(get_current_user)):
+    """
+    List all created chatrooms with their id, name, members, and created_at.
+    """
+    chatrooms = await db['chatrooms'].find().to_list(length=100)  # Modify `length` as needed
+    
+    # Format chatrooms for the response
+    response = []
+    for chatroom in chatrooms:
+        response.append({
+            "id": str(chatroom["_id"]),
+            "name": chatroom["name"],
+            "members": chatroom.get("members", [])
+        })
+    
+    return response
+
+
+@router.post("/create")
+async def create_chatroom(chatroom: ChatRoomCreate, db=Depends(get_db), current_user=Depends(get_current_user)):
     existing_room = await db['chatrooms'].find_one({"name": chatroom.name})
     if existing_room:
         raise HTTPException(status_code=400, detail="Chatroom already exists.")
@@ -31,7 +51,7 @@ async def create_chatroom(chatroom: ChatRoomCreate, db=Depends(get_db)):
 class MemberAddRequest(BaseModel):
     username: str
 
-@router.post("/chatrooms/{room_id}/members")
+@router.post("/{room_id}/add-member")
 async def add_member_to_chatroom(room_id: str, db=Depends(get_db), current_user=Depends(get_current_user)):
     chatroom = await db['chatrooms'].find_one({"_id": ObjectId(room_id)})
     if not chatroom:
@@ -43,6 +63,40 @@ async def add_member_to_chatroom(room_id: str, db=Depends(get_db), current_user=
     updated_chatroom = await db['chatrooms'].find_one({"_id": ObjectId(room_id)})
     
     return {"message": "Member added successfully", "members": updated_chatroom["members"]}
+
+
+@router.post("/join-platoon-chat")
+async def join_platoon_chat(state_code: str, db=Depends(get_db), current_user=Depends(get_current_user)):
+    # Validate state_code format
+    if len(state_code) < 1 or not state_code[-1].isdigit():
+        raise HTTPException(status_code=400, detail="Invalid state code format.")
+    
+    # Extract last digit as platoon number
+    platoon_number = int(state_code[-1])  # Get last character and convert to int
+    
+    # Check if platoon_number is valid (1-10)
+    if platoon_number < 1 or platoon_number > 10:
+        raise HTTPException(status_code=400, detail="Platoon number must be between 1 and 10.")
+    
+    # Construct the expected platoon name
+    platoon_name = f"platoon {platoon_number}"
+    
+    # Find chatroom that matches the platoon name
+    chatroom = await db['chatrooms'].find_one({"name": platoon_name})
+    
+    if not chatroom:
+        raise HTTPException(status_code=404, detail=f"{platoon_name} chat not found.")
+    
+    # Check if user is already a member of the chatroom
+    if current_user["username"] in chatroom['members']:
+        raise HTTPException(status_code=400, detail="You are already a member of this chat.")
+    
+    # Add user to members if they are not already in the chat
+    await db['chatrooms'].update_one({"_id": chatroom["_id"]}, {"$push": {"members": current_user["username"]}})
+    
+    updated_chatroom = await db['chatrooms'].find_one({"_id": chatroom["_id"]})
+    
+    return {"message": "Joined platoon chat successfully", "members": updated_chatroom["members"]}
 
 
 class ConnectionManager:
