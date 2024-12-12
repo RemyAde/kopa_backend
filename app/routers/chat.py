@@ -110,7 +110,7 @@ async def join_platoon_chat(state_code: str, db=Depends(get_db), current_user=De
     
     updated_chatroom = await db['chatrooms'].find_one({"_id": chatroom["_id"]})
     
-    return {"message": "Joined platoon chat successfully", "members": updated_chatroom["members"]}
+    return {"message": "Joined platoon chat successfully", "chatroom_id": str(updated_chatroom["_id"]), "members": updated_chatroom["members"]}
 
 
 class ConnectionManager:
