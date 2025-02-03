@@ -28,6 +28,14 @@ class OAuth2PasswordRequestFormEmail(OAuth2PasswordRequestForm):
 
 @router.post("/signup", status_code=status.HTTP_201_CREATED)
 async def singup(user: UserCreate, background_tasks: BackgroundTasks, db=Depends(get_db)):
+    """
+   - Description: Create a new user account.
+   - Request Body:
+     - user: UserCreate (includes `full_name`, `email`, and `password`)
+   - Response:
+     - 201 Created: User created successfully. Check your email for your verification code.
+     - 400 Bad Request: User already exists.
+     """
     new_user = User(
         full_name=user.full_name,
         email = user.email,
@@ -51,6 +59,16 @@ async def singup(user: UserCreate, background_tasks: BackgroundTasks, db=Depends
 
 @router.post("/resend-verification")
 async def resend_verification_code(email: str, background_tasks: BackgroundTasks, db=Depends(get_db)):
+    """
+    - Description: Resend the verification code to the user's email.
+   - Request Body:
+     - email: str
+   - Response:
+     - 200 OK: A new verification code has been sent to your email.
+     - 404 Not Found: User not found.
+     - 400 Bad Request: User already verified.
+     - 429 Too Many Requests: You can only request a new verification email every 1 minute.
+     """
     # Retrieve user from the database
     user = await db["users"].find_one({"email": email})
     if not user:
@@ -85,6 +103,15 @@ async def resend_verification_code(email: str, background_tasks: BackgroundTasks
 
 @router.get("/verify-email")
 async def verify_email(code: int, db=Depends(get_db)):
+    """
+     - Description: Verify the user's email using the provided code.
+   - Query Parameters:
+     - code: int
+   - Response:
+     - 200 OK: Email verified successfully.
+     - 400 Bad Request: Invalid or expired token.
+     - 404 Not Found: User not found.
+     """
     email = await verify_verification_code(code, db)
     if email is None:
         raise HTTPException(status_code=400, detail="Invalid or expired token.")
@@ -98,6 +125,14 @@ async def verify_email(code: int, db=Depends(get_db)):
 
 @router.post("/token", response_model=Token)
 async def login_for_access_token(form_data: OAuth2PasswordRequestFormEmail = Depends(), db=Depends(get_db)):
+    """
+    - Description: Authenticate the user and provide an access token.
+   - Request Body:
+     - form_data: OAuth2PasswordRequestFormEmail (includes `email` and `password`)
+   - Response:
+     - 200 OK: Returns an access token and token type.
+     - 401 Unauthorized: Invalid email or password.
+     """
     user = await authenticate_user(form_data.username, form_data.password, db)
     if not user:
         raise HTTPException(
