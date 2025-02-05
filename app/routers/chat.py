@@ -38,6 +38,21 @@ async def list_chatrooms(db=Depends(get_db), current_user=Depends(get_current_us
 
 @router.get("/my-chatrooms")
 async def list_user_chatrooms(db=Depends(get_db), current_user=Depends(get_current_user)):
+    """
+    Retrieves a list of chatrooms where the current user is a member.
+    Args:
+        db: Database session dependency (MongoDB)
+        current_user (dict): The currently authenticated user's information
+    Returns:
+        dict: A dictionary containing list of chatrooms with their details:
+            - chatrooms: List of dictionaries with following structure:
+                - id (str): Chatroom's unique identifier
+                - name (str): Name of the chatroom
+                - members (list): List of usernames who are members of the chatroom
+    Raises:
+        HTTPException: If no chatrooms are found for the current user (404)
+    """
+
     # Fetch chatrooms where the current user is a member
     chatrooms = await db['chatrooms'].find({"members": current_user["username"]}).to_list(length=100)
 
@@ -52,6 +67,38 @@ async def list_user_chatrooms(db=Depends(get_db), current_user=Depends(get_curre
 
 @router.post("/create-chatroom")
 async def create_chatroom(chatroom: ChatRoomCreate, db=Depends(get_db), current_user=Depends(get_current_user)):
+    """
+    Create a new chatroom in the database.
+    This async function creates a new chatroom with the given name and members. It first checks if a
+    chatroom with the same name already exists to prevent duplicates.
+    Parameters
+    ----------
+    chatroom : ChatRoomCreate
+        Pydantic model containing the chatroom details (name and members)
+    db : AsyncIOMotorDatabase
+        Database connection instance obtained from dependency injection
+    current_user : dict
+        Current authenticated user details obtained from dependency injection
+    Returns
+    -------
+    dict
+        A dictionary containing:
+        - message: Success message with the chatroom name
+        - chatroom_id: String representation of the created chatroom's ObjectId
+    Raises
+    ------
+    HTTPException
+        400 error if a chatroom with the same name already exists
+    Examples
+    --------
+    >>> chatroom_data = ChatRoomCreate(name="New Room", members=["user1", "user2"])
+    >>> result = await create_chatroom(chatroom_data, db, current_user)
+    >>> print(result)
+    {
+        "message": "New Room successfully created",
+        "chatroom_id": "507f1f77bcf86cd799439011"
+    """
+
     existing_room = await db['chatrooms'].find_one({"name": chatroom.name})
     if existing_room:
         raise HTTPException(status_code=400, detail="Chatroom already exists.")
@@ -71,6 +118,24 @@ async def create_chatroom(chatroom: ChatRoomCreate, db=Depends(get_db), current_
 
 @router.post("/{room_id}/add-member")
 async def add_member_to_chatroom(room_id: str, db=Depends(get_db), current_user=Depends(get_current_user)):
+    """
+    Adds the current user to a chatroom's member list if they are not already a member.
+    Args:
+        room_id (str): The ID of the chatroom to add the member to
+        db: Database dependency injection (MongoDB instance)
+        current_user: The authenticated user making the request
+    Returns:
+        dict: A dictionary containing:
+            - message (str): Success message
+            - members (list): Updated list of members in the chatroom
+    Raises:
+        HTTPException: 404 if chatroom is not found
+    Example:
+        >>> result = await add_member_to_chatroom("507f1f77bcf86cd799439011")
+        >>> print(result)
+        {"message": "Member added successfully", "members": ["user1", "user2"]}
+    """
+
     chatroom = await db['chatrooms'].find_one({"_id": ObjectId(room_id)})
     if not chatroom:
         raise HTTPException(status_code=404, detail="Chatroom not found.")
@@ -89,6 +154,30 @@ async def join_platoon_chat(
     db=Depends(get_db), 
     current_user=Depends(get_current_user)
     ):
+    """
+    Asynchronously adds a user to a platoon chat room based on a state code.
+    Parameters:
+        state_code (str): A formatted string following pattern 'XX/00X/0000' where X is a letter and 0 is a digit. 
+                         The last digit represents the platoon number (1-10).
+        db: Database connection dependency injection.
+        current_user (dict): The authenticated user information obtained via dependency injection.
+    Returns:
+        dict: A dictionary containing:
+            - message: Success message
+            - chatroom_id: The ID of the joined chatroom
+            - members: List of all members in the chatroom
+    Raises:
+        HTTPException(400): If state code format is invalid
+        HTTPException(400): If user already has a different state code
+        HTTPException(400): If platoon number is not between 1 and 10
+        HTTPException(400): If user is already a member of the chat
+        HTTPException(404): If platoon chat room is not found
+    Example:
+        >>> await join_platoon_chat(state_code="NY/12A/1234", db=db, current_user=user)
+        {
+            "chatroom_id": "507f1f77bcf86cd799439011",
+            "members": ["user1", "user2"]
+    """
     
     if len(state_code) < 1 or not state_code[-1].isdigit():
         raise HTTPException(status_code=400, detail="Invalid state code format.")

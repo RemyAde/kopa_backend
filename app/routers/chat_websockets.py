@@ -28,6 +28,28 @@ manager = ConnectionManager()
 
 @router.websocket("/ws/{room_id}")
 async def websocket_endpoint(websocket: WebSocket, room_id: str, token: str = Query(...)):
+    """
+    Handles WebSocket connections for a chat room.
+    This endpoint manages real-time chat connections, including authentication, message broadcasting,
+    and message persistence in the database.
+    Args:
+        websocket (WebSocket): The WebSocket connection instance
+        room_id (str): The ID of the chat room to connect to
+        token (str): Authentication token passed as a query parameter
+    Returns:
+        None
+    Raises:
+        WebSocketDisconnect: When the client disconnects from the WebSocket
+        HTTPException: When authentication fails or user is not authorized
+    Flow:
+        1. Authenticates user using provided token
+        2. Verifies user's membership in the chatroom
+        3. Establishes WebSocket connection
+        4. Sends existing chat history to newly connected user
+        5. Handles incoming messages and broadcasts them
+        6. Stores messages in the database
+        7. Manages disconnection
+    """
 
         # Get database connection
     db = await get_db()
