@@ -40,17 +40,17 @@ async def list_chatrooms(db=Depends(get_db), current_user=Depends(get_current_us
 async def list_user_chatrooms(db=Depends(get_db), current_user=Depends(get_current_user)):
     """
     Retrieves a list of chatrooms where the current user is a member.
-    Args:
-        db: Database session dependency (MongoDB)
-        current_user (dict): The currently authenticated user's information
-    Returns:
-        dict: A dictionary containing list of chatrooms with their details:
+    -Args:
+        -db: Database session dependency (MongoDB)
+        -current_user (dict): The currently authenticated user's information
+    -Returns:
+        -dict: A dictionary containing list of chatrooms with their details:
             - chatrooms: List of dictionaries with following structure:
                 - id (str): Chatroom's unique identifier
                 - name (str): Name of the chatroom
                 - members (list): List of usernames who are members of the chatroom
-    Raises:
-        HTTPException: If no chatrooms are found for the current user (404)
+    -Raises:
+        -HTTPException: If no chatrooms are found for the current user (404)
     """
 
     # Fetch chatrooms where the current user is a member
@@ -73,22 +73,22 @@ async def create_chatroom(chatroom: ChatRoomCreate, db=Depends(get_db), current_
     chatroom with the same name already exists to prevent duplicates.
     Parameters
     ----------
-    chatroom : ChatRoomCreate
-        Pydantic model containing the chatroom details (name and members)
-    db : AsyncIOMotorDatabase
-        Database connection instance obtained from dependency injection
-    current_user : dict
-        Current authenticated user details obtained from dependency injection
+    -chatroom : ChatRoomCreate
+        -Pydantic model containing the chatroom details (name and members)
+    -db : AsyncIOMotorDatabase
+        -Database connection instance obtained from dependency injection
+    -current_user : dict
+        -Current authenticated user details obtained from dependency injection
     Returns
     -------
-    dict
+    -dict
         A dictionary containing:
         - message: Success message with the chatroom name
         - chatroom_id: String representation of the created chatroom's ObjectId
     Raises
     ------
-    HTTPException
-        400 error if a chatroom with the same name already exists
+    -HTTPException
+        -400 error if a chatroom with the same name already exists
     Examples
     --------
     >>> chatroom_data = ChatRoomCreate(name="New Room", members=["user1", "user2"])
@@ -178,7 +178,7 @@ async def join_platoon_chat(
             "chatroom_id": "507f1f77bcf86cd799439011",
             "members": ["user1", "user2"]
     """
-    
+
     if len(state_code) < 1 or not state_code[-1].isdigit():
         raise HTTPException(status_code=400, detail="Invalid state code format.")
     
